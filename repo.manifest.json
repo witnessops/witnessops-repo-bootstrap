@@ -1,0 +1,33 @@
+{
+  "repo_id": "witnessops-repo-bootstrap",
+  "repo_class": "template",
+  "status": "seeded",
+  "authority": {
+    "source_authority": "github",
+    "runtime_authority": "none",
+    "evidence_authority": "none",
+    "proof_authority": "none",
+    "verification_authority": "scripts/validate-repo.sh and .github/workflows/validate.yml",
+    "governance_authority": "REPO_CONTRACT.md and GOVERNANCE.md"
+  },
+  "owners": {
+    "primary": "VaultSovereign",
+    "maintainers": []
+  },
+  "allowed_secret_storage": [
+    "github-actions-secrets",
+    "azure-key-vault"
+  ],
+  "forbidden": [
+    "plaintext-secrets",
+    "production-credentials",
+    "customer-data",
+    "customer-evidence",
+    "manual-only-release-claims",
+    "unvalidated-schema-changes",
+    "implied-runtime-authority",
+    "implied-proof-authority"
+  ],
+  "proof_surfaces": [],
+  "created_for": "WitnessOps repository bootstrap standard"
+}
