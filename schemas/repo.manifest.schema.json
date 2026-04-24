@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://witnessops.com/schemas/repo.manifest.schema.json",
+  "title": "WitnessOps Repo Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "repo_id",
+    "repo_class",
+    "status",
+    "authority",
+    "owners",
+    "allowed_secret_storage",
+    "forbidden",
+    "proof_surfaces",
+    "created_for"
+  ],
+  "properties": {
+    "repo_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repo_class": {
+      "type": "string",
+      "enum": [
+        "proof-component",
+        "verifier",
+        "catalogue",
+        "site",
+        "operator-tool",
+        "schema-registry",
+        "sample-cases",
+        "docs",
+        "integration-bridge",
+        "template"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "seeded",
+        "active",
+        "experimental",
+        "deprecated",
+        "archived"
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_authority",
+        "runtime_authority",
+        "evidence_authority",
+        "proof_authority",
+        "verification_authority",
+        "governance_authority"
+      ],
+      "properties": {
+        "source_authority": { "type": "string", "minLength": 1 },
+        "runtime_authority": { "type": "string", "minLength": 1 },
+        "evidence_authority": { "type": "string", "minLength": 1 },
+        "proof_authority": { "type": "string", "minLength": 1 },
+        "verification_authority": { "type": "string", "minLength": 1 },
+        "governance_authority": { "type": "string", "minLength": 1 }
+      }
+    },
+    "owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "maintainers"],
+      "properties": {
+        "primary": { "type": "string", "minLength": 1 },
+        "maintainers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "allowed_secret_storage": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "forbidden": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "proof_surfaces": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "created_for": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}
