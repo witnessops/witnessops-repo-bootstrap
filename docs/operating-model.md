@@ -1,12 +1,25 @@
 # Operating Model
 
-This document records how this template is used.
+This template establishes a bounded repository seed. It does not create runtime,
+evidence, proof, receipt, verification-outcome, or production authority.
 
-1. Create a new repository from this template.
-2. Update repository identity fields.
-3. Update ownership fields.
-4. Check the manifest.
-5. Run the validation script.
-6. Confirm the validation workflow passes.
+## Seed a repository
 
-A seed is complete only after the required files exist and validation passes.
+1. Create or copy the repository from this bootstrap.
+2. Complete `docs/customization-checklist.md` before feature work.
+3. Run `bash scripts/validate-repo.sh` from the new repository root.
+4. Open a pull request that states its change class and authority impact.
+5. Confirm the named validation check passes on the exact commit.
+6. Apply and verify `docs/repository-settings.md` after the check exists.
+7. Call the repository `seeded` only after the source and settings gates pass.
+
+## Change the standard
+
+1. Make one reviewable change to this bootstrap.
+2. Record durable authority, security, or workflow decisions under
+   `docs/decisions/`.
+3. Update the changelog and any copied guidance affected by the change.
+4. Run the local gate and open a draft pull request for owner review.
+5. Merge only after the governance requirements and required check pass.
+6. Propagate an approved release deliberately; do not silently overwrite
+   repository-specific authority, ownership, or security policy.

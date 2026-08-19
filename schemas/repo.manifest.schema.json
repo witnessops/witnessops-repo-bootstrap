@@ -18,10 +18,12 @@
   "properties": {
     "repo_id": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
     },
     "repo_class": {
       "type": "string",
+      "minLength": 1,
       "enum": [
         "proof-component",
         "verifier",
@@ -37,6 +39,7 @@
     },
     "status": {
       "type": "string",
+      "minLength": 1,
       "enum": [
         "seeded",
         "active",
@@ -73,21 +76,26 @@
         "primary": { "type": "string", "minLength": 1 },
         "maintainers": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
         }
       }
     },
     "allowed_secret_storage": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
     },
     "forbidden": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
     },
     "proof_surfaces": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
     },
     "created_for": {
       "type": "string",

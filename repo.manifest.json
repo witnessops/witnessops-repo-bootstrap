@@ -14,10 +14,7 @@
     "primary": "VaultSovereign",
     "maintainers": []
   },
-  "allowed_secret_storage": [
-    "github-actions-secrets",
-    "azure-key-vault"
-  ],
+  "allowed_secret_storage": [],
   "forbidden": [
     "plaintext-secrets",
     "production-credentials",

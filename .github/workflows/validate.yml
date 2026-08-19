@@ -5,227 +5,26 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
-  id-token: none
+
+concurrency:
+  group: validate-repo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
+    name: Validate repository contract
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-
-      - name: Validate repo contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ci-evidence/artifacts ci-evidence/logs
-
-          set +e
-          bash scripts/validate-repo.sh > ci-evidence/logs/repo-contract-validation.log 2>&1
-          rc=$?
-          set -e
-
-          cat ci-evidence/logs/repo-contract-validation.log
-
-          export COMMAND_RC="$rc"
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          rc = int(os.environ["COMMAND_RC"])
-          payload = {
-              "command": "bash scripts/validate-repo.sh",
-              "exit_code": rc,
-              "status": "passed" if rc == 0 else "failed",
-          }
-
-          Path("ci-evidence/artifacts/repo-contract-validation.result.json").write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          PY
-
-          exit "$rc"
-
-      - name: Build canonical CI evidence bundle
-        if: always()
-        shell: bash
-        env:
-          PRODUCER_JOB_STATUS: "${{ job.status }}"
-        run: |
-          set -euo pipefail
-          mkdir -p ci-evidence/artifacts ci-evidence/logs
-
-          python3 - <<'PY'
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-
-          bundle_dir = Path("ci-evidence")
-          artifacts_dir = bundle_dir / "artifacts"
-          logs_dir = bundle_dir / "logs"
-
-          def sha256_prefixed(path: Path) -> str:
-              digest = hashlib.sha256()
-              with path.open("rb") as handle:
-                  for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                      digest.update(chunk)
-              return f"sha256:{digest.hexdigest()}"
-
-          artifact_records = []
-          for path in sorted(artifacts_dir.glob("*")):
-              if path.is_file():
-                  artifact_records.append({
-                      "path": path.relative_to(bundle_dir).as_posix(),
-                      "sha256": sha256_prefixed(path),
-                      "role": "command_result",
-                  })
-
-          log_records = []
-          for path in sorted(logs_dir.glob("*")):
-              if path.is_file():
-                  log_records.append({
-                      "path": path.relative_to(bundle_dir).as_posix(),
-                      "sha256": sha256_prefixed(path),
-                      "role": "execution_log",
-                  })
-
-          status = (
-              "execution_complete"
-              if os.environ.get("PRODUCER_JOB_STATUS", "success") == "success"
-              else "execution_failed"
-          )
-
-          bundle = {
-              "bundle_version": "witnessops.ci_evidence_bundle.v1",
-              "producer": {
-                  "repo": os.environ["GITHUB_REPOSITORY"],
-                  "commit_sha": os.environ["GITHUB_SHA"],
-                  "workflow": os.environ["GITHUB_WORKFLOW"],
-                  "run_id": os.environ["GITHUB_RUN_ID"],
-                  "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
-                  "job": "validate",
-              },
-              "artifacts": artifact_records,
-              "logs": log_records,
-              "untracked_file_policy": {
-                  "mode": "deny",
-                  "allowlist": [],
-              },
-              "untracked_files": [],
-              "status": status,
-          }
-
-          (bundle_dir / "CI_EVIDENCE.json").write_text(
-              json.dumps(bundle, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-
-          manifest_lines = []
-          for path in sorted(p for p in bundle_dir.rglob("*") if p.is_file()):
-              if path.name == "MANIFEST.sha256":
-                  continue
-              manifest_lines.append(
-                  f"{sha256_prefixed(path)} {path.relative_to(bundle_dir).as_posix()}"
-              )
-
-          (bundle_dir / "MANIFEST.sha256").write_text(
-              "\n".join(manifest_lines) + "\n",
-              encoding="utf-8",
-          )
-          PY
-
-      - name: Upload CI evidence bundle
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ci-evidence
-          path: ci-evidence/
-          if-no-files-found: error
-          retention-days: 14
-
-  ci-evidence-verifier:
-    name: Verify CI evidence bundle
-    needs: validate
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Download CI evidence bundle
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: ci-evidence
-          path: ci-evidence
-
-      - name: Check out CI evidence verifier
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          repository: witnessops/witnessops-verifier
-          ref: 4bc7f8000cbcb2d94543876de55622cd4f9cd096
-          path: witnessops-verifier
-          token: "${{ secrets.WITNESSOPS_CI_READ_TOKEN }}"
           persist-credentials: false
 
-      - name: Check out contract schemas
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          repository: witnessops/witnessops-contracts
-          ref: 36d22b723478ef28175a1419aaabc218bc63b387
-          path: witnessops-contracts
-          token: "${{ secrets.WITNESSOPS_CI_READ_TOKEN }}"
-          persist-credentials: false
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.12"
-
-      - name: Install verifier dependencies
-        run: python -m pip install -r witnessops-verifier/requirements-dev.txt
-
-      - name: Run CI evidence verifier
+      - name: Validate repository contract
         shell: bash
-        run: |
-          set -euo pipefail
-
-          rc=0
-          PYTHONPATH="$PWD/witnessops-verifier" \
-            python -m verifier.ci_evidence.verify_ci_evidence \
-              --bundle-dir "$PWD/ci-evidence" \
-              --contracts-dir "$PWD/witnessops-contracts" \
-              --output "$PWD/ci-verifier-result.json" || rc=$?
-
-          export VERIFY_RC="$rc"
-
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          result_path = Path("ci-verifier-result.json")
-          if not result_path.is_file():
-              raise SystemExit("ci-verifier-result.json was not written")
-
-          payload = json.loads(result_path.read_text(encoding="utf-8"))
-          rc = int(os.environ["VERIFY_RC"])
-
-          if rc != 0:
-              raise SystemExit(f"CI evidence verifier exited non-zero: {rc}")
-
-          if payload.get("status") != "valid":
-              raise SystemExit(f"CI evidence verifier status was not valid: {payload.get('status')}")
-          PY
-
-      - name: Upload CI verifier result
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ci-verifier-result
-          path: ci-verifier-result.json
-          if-no-files-found: warn
-          retention-days: 14
+        run: bash scripts/validate-repo.sh

@@ -35,7 +35,7 @@ It exists to prevent repositories from acquiring operational, proof, customer, o
 | Plane | Authority in this repo |
 |---|---|
 | Source | Files committed to this repository |
-| Execution | None |
+| Execution | CI validation of this repository only |
 | Evidence | None |
 | Receipt | None |
 | Verification | Validation script and CI only |
@@ -46,13 +46,21 @@ It exists to prevent repositories from acquiring operational, proof, customer, o
 
 A change is releasable only when:
 
-1. `repo.manifest.json` exists.
-2. `repo.manifest.json` parses as JSON.
-3. Required repo contract files exist.
-4. Required documentation files exist.
-5. Required GitHub workflow files exist.
-6. Secret-like material is not detected by the bootstrap validation script.
-7. CI passes.
+1. Required contract, documentation, validation, test, and GitHub files exist.
+2. The manifest and schema parse as UTF-8 JSON without duplicate object keys.
+3. The manifest has only the required keys, with allowed types and values.
+4. The manifest repository identity matches a required GitHub, explicit local,
+   or Git remote identity source.
+5. `REPO_CONTRACT.md`, `README.md`, and the creation decision match that identity.
+6. `GOVERNANCE.md`, `SECURITY.md`, and every effective CODEOWNERS rule retain
+   `owners.primary`, including the required catch-all rule.
+7. Required files are regular files, and the baseline validation workflow
+   exactly matches the reviewed read-only, credential-free, repository-local,
+   action-pinned baseline.
+8. A template repository contains no additional workflow.
+9. The validator regression suite passes.
+10. Secret-like material is not detected by the bootstrap guardrail.
+11. CI passes for the relevant commit.
 
 ## Failure language
 
@@ -62,4 +70,6 @@ Do not describe a repository as verified, production-ready, compliant, or proof-
 
 ## Template use
 
-When this repository is used to seed a new repository, the new repository must replace placeholder identity fields before claiming its own seed is complete.
+When this repository is used to seed a new repository, the new repository must
+complete `docs/customization-checklist.md` and pass its own validation workflow
+before claiming its seed is complete.

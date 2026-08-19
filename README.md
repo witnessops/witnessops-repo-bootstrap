@@ -26,6 +26,9 @@ This repository is not a product runtime, verifier, proof issuer, or customer ev
 A new WitnessOps repo should begin with:
 
 ```text
+.gitignore
+AGENTS.md
+CONTRIBUTING.md
 README.md
 REPO_CONTRACT.md
 GOVERNANCE.md
@@ -35,24 +38,51 @@ LICENSE
 repo.manifest.json
 schemas/repo.manifest.schema.json
 scripts/validate-repo.sh
+scripts/validate_repo.py
+tests/test_validate_repo.py
 .github/workflows/validate.yml
 .github/CODEOWNERS
+.github/dependabot.yml
 .github/pull_request_template.md
+.github/ISSUE_TEMPLATE/config.yml
+.github/ISSUE_TEMPLATE/repository-standard-gap.yml
 docs/authority-boundary.md
+docs/customization-checklist.md
 docs/operating-model.md
 docs/release-gates.md
+docs/repository-settings.md
 docs/decisions/0001-repo-created.md
+docs/decisions/0002-self-contained-seed-validation.md
 ```
+
+## Customize before calling a repo seeded
+
+A copied repository still describes this bootstrap until its identity,
+authority, ownership, and purpose are replaced. Complete the
+[repository customization checklist](docs/customization-checklist.md) before
+using `seeded` status.
 
 ## Validation
 
-Run locally:
+With Bash and Python 3.10 or newer, run locally:
 
 ```bash
 bash scripts/validate-repo.sh
 ```
 
-CI runs the same validation on pushes to `main` and pull requests.
+The gate validates regular required files, duplicate-free exact manifest shape,
+trusted repository identity, effective cross-file ownership, the canonical
+least-privilege workflow, configured secret-like patterns, and its regression
+suite. The template rejects additional workflow files until a copied repository
+changes class and documents its own workflow authority.
+
+CI runs the same gate on pushes to `main`, pull requests, and manual dispatch.
+The baseline workflow uses no organization secret, private repository checkout,
+external verifier, signing service, or proof receipt path.
+
+GitHub settings are a separate owner-operated gate. Apply
+[`docs/repository-settings.md`](docs/repository-settings.md) after the validation
+check exists.
 
 ## Repo classes
 

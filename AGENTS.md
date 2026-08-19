@@ -32,7 +32,11 @@ Run the repository validation gate before claiming a local patch is ready:
 bash scripts/validate-repo.sh
 ```
 
-This command validates the template repository contract. It does not prove seeded repos are verified, production-ready, compliant, or proof-producing.
+This command runs the structural validator and its regression suite. The
+required CI workflow invokes the same command without organization credentials,
+private repository checkouts, an external verifier, signing, or receipt
+generation. Passing it does not prove seeded repos are verified,
+production-ready, compliant, or proof-producing.
 
 ## Completion Evidence
 
@@ -53,6 +57,10 @@ Every Codex implementation lane must report:
 - Do not claim a seeded repository is verified, production-ready, compliant, or proof-producing unless the exact verifier, artifact, receipt, or proof path is named.
 - Do not change seeded repository authority language casually; template wording affects downstream repo boundaries.
 - Do not widen validation, release, or governance claims beyond the named command and artifacts.
+- Do not add a credential or cross-repository dependency to the reusable baseline validation workflow.
+- Do not change the canonical validation workflow without updating its validator
+  value, regression coverage, decision record, and authority-impact review.
+- Do not add another workflow while the repository class is `template`.
 - Do not modify files outside the approved lane scope.
 
 ## Release Language

@@ -1,0 +1,45 @@
+name: Repository standard gap
+description: Report a concrete gap in the WitnessOps repository bootstrap standard.
+title: "[repo-standard] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe only the repository-standard gap. Do not include secrets,
+        credentials, customer data, private evidence, or production material.
+  - type: textarea
+    id: gap
+    attributes:
+      label: Observed gap
+      description: Name the affected file, behavior, and direct evidence.
+    validations:
+      required: true
+  - type: dropdown
+    id: authority-impact
+    attributes:
+      label: Authority impact
+      options:
+        - none
+        - source
+        - execution
+        - evidence
+        - receipt
+        - verification
+        - governance
+        - presentation
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Reproduction or validation command
+      description: Provide a bounded command or state why no command applies.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I have not included secrets, customer data, or private evidence.
+          required: true
