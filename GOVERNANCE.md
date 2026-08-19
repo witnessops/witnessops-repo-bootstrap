@@ -30,12 +30,30 @@ A change can be merged when:
 3. Any authority-impacting change is visible in the pull request body or commit message.
 4. The repository contract remains accurate after the change.
 
+## Baseline workflow rule
+
+The required seed gate must remain self-contained and least-privilege. It may
+check out this repository with read-only contents permission and run the named
+local validator. It must not depend on an organization secret, private or
+cross-repository checkout, external verifier, signing service, or receipt path.
+
+The template workflow must match the reviewed canonical file exactly and remain
+the template's only workflow. A pinned-action update must change the workflow
+and the validator's canonical value together. A downstream repository may add a
+workflow only after documenting that workflow's execution, permission,
+credential, and authority boundary.
+
+Adding any such dependency is both authority-impacting and security-impacting.
+It requires explicit owner review and a separate repository-specific decision;
+it is not part of the reusable baseline.
+
 ## Prohibited shortcuts
 
 - Do not bypass validation and still claim the seed is complete.
 - Do not introduce production credentials.
 - Do not use this repo as customer evidence custody.
 - Do not describe template validation as proof of runtime correctness.
+- Do not make the reusable seed gate depend on organization credentials.
 
 ## Decision records
 
