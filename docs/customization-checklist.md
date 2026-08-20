@@ -4,6 +4,10 @@ Use this checklist immediately after creating or copying a repository from this
 bootstrap. The copied files describe the bootstrap repository until each item is
 made specific to the new repository.
 
+A repository created with the bootstrap's `scripts/seed-new-repo.sh` has the
+identity, ownership, and creation-decision items below prefilled. Verify each
+prefilled item instead of skipping it; the remaining items stay manual.
+
 ## Required identity changes
 
 1. Set `repo.manifest.json.repo_id` to the exact GitHub repository name.
