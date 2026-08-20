@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -287,13 +288,13 @@ class ValidateRepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             workflow = target / ".github/workflows/validate.yml"
-            workflow.write_text(
-                workflow.read_text(encoding="utf-8").replace(
-                    "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
-                    "actions/checkout@v4",
-                ),
-                encoding="utf-8",
+            unpinned, count = re.subn(
+                r"actions/checkout@[0-9a-f]{40}",
+                "actions/checkout@v4",
+                workflow.read_text(encoding="utf-8"),
             )
+            self.assertEqual(count, 1)
+            workflow.write_text(unpinned, encoding="utf-8")
             result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
