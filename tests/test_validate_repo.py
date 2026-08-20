@@ -11,6 +11,14 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "scripts" / "validate_repo.py"
 
+# The regression suite must pass unchanged in repositories seeded from the
+# bootstrap template, so identity and ownership come from the manifest instead
+# of hardcoded template values.
+_MANIFEST = json.loads((ROOT / "repo.manifest.json").read_text(encoding="utf-8"))
+REPO_ID = _MANIFEST["repo_id"]
+REPO_CLASS = _MANIFEST["repo_class"]
+PRIMARY_OWNER = _MANIFEST["owners"]["primary"]
+
 
 class ValidateRepoTests(unittest.TestCase):
     def run_validator(
@@ -44,7 +52,7 @@ class ValidateRepoTests(unittest.TestCase):
         return target
 
     def test_current_repository_passes(self):
-        result = self.run_validator(ROOT, "witnessops-repo-bootstrap")
+        result = self.run_validator(ROOT, REPO_ID)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("repo bootstrap validation passed", result.stdout)
 
@@ -52,7 +60,7 @@ class ValidateRepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             (target / "SECURITY.md").unlink()
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing required file: SECURITY.md", result.stderr)
 
@@ -64,7 +72,7 @@ class ValidateRepoTests(unittest.TestCase):
                 readme.read_text(encoding="utf-8").replace("CONTRIBUTING.md\n", ""),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("inventory is missing: CONTRIBUTING.md", result.stderr)
 
@@ -75,7 +83,7 @@ class ValidateRepoTests(unittest.TestCase):
             manifest = json.loads(path.read_text(encoding="utf-8"))
             manifest["unreviewed_authority"] = "runtime"
             path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("contains unsupported key: unreviewed_authority", result.stderr)
 
@@ -85,14 +93,13 @@ class ValidateRepoTests(unittest.TestCase):
             path = target / "repo.manifest.json"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    '  "repo_id": "witnessops-repo-bootstrap",',
-                    '  "repo_id": "witnessops-repo-bootstrap",\n'
-                    '  "repo_id": "shadow-repository",',
+                    f'"repo_id": "{REPO_ID}"',
+                    f'"repo_id": "{REPO_ID}",\n  "repo_id": "shadow-repository"',
                     1,
                 ),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("contains duplicate key: repo_id", result.stderr)
 
@@ -103,7 +110,7 @@ class ValidateRepoTests(unittest.TestCase):
             schema = json.loads(path.read_text(encoding="utf-8"))
             schema["properties"]["repo_id"]["pattern"] = ".*"
             path.write_text(json.dumps(schema, indent=2) + "\n", encoding="utf-8")
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("repo_id.pattern does not match", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
@@ -115,14 +122,14 @@ class ValidateRepoTests(unittest.TestCase):
             schema = json.loads(path.read_text(encoding="utf-8"))
             schema["properties"]["repo_id"]["default"] = "shadow-repository"
             path.write_text(json.dumps(schema, indent=2) + "\n", encoding="utf-8")
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("contains unsupported key: default", result.stderr)
 
     def test_stale_template_identity_fails(self):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
-            result = self.run_validator(target, "new-witnessops-repository")
+            result = self.run_validator(target, f"different-{REPO_ID}")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("does not match repository identity", result.stderr)
 
@@ -137,42 +144,43 @@ class ValidateRepoTests(unittest.TestCase):
         result = self.run_validator(
             ROOT,
             "untrusted-local-override",
-            {"GITHUB_REPOSITORY": "witnessops/witnessops-repo-bootstrap"},
+            {"GITHUB_REPOSITORY": f"example-org/{REPO_ID}"},
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_customized_repository_identity_passes(self):
+        new_repo_id = f"renamed-{REPO_ID}"
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             manifest_path = target / "repo.manifest.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["repo_id"] = "new-witnessops-repository"
+            manifest["repo_id"] = new_repo_id
             manifest_path.write_text(
                 json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
             )
 
             replacements = {
                 "REPO_CONTRACT.md": (
-                    "Repo: `witnessops-repo-bootstrap`",
-                    "Repo: `new-witnessops-repository`",
+                    f"Repo: `{REPO_ID}`",
+                    f"Repo: `{new_repo_id}`",
                 ),
                 "README.md": (
-                    "# witnessops-repo-bootstrap",
-                    "# new-witnessops-repository",
+                    f"# {REPO_ID}",
+                    f"# {new_repo_id}",
                 ),
                 "docs/decisions/0001-repo-created.md": (
-                    "Create `witnessops-repo-bootstrap`",
-                    "Create `new-witnessops-repository`",
+                    f"Create `{REPO_ID}`",
+                    f"Create `{new_repo_id}`",
                 ),
             }
             for relative, (old, new) in replacements.items():
                 path = target / relative
                 path.write_text(
-                    path.read_text(encoding="utf-8").replace(old, new),
+                    path.read_text(encoding="utf-8").replace(old, new, 1),
                     encoding="utf-8",
                 )
 
-            result = self.run_validator(target, "new-witnessops-repository")
+            result = self.run_validator(target, new_repo_id)
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_invalid_manifest_type_fails_without_crashing(self):
@@ -182,22 +190,23 @@ class ValidateRepoTests(unittest.TestCase):
             manifest = json.loads(path.read_text(encoding="utf-8"))
             manifest["repo_class"] = ["template"]
             path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("repo_class must be a non-empty string", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
     def test_contract_manifest_mismatch_fails(self):
+        other_class = "site" if REPO_CLASS != "site" else "docs"
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             contract = target / "REPO_CONTRACT.md"
             contract.write_text(
                 contract.read_text(encoding="utf-8").replace(
-                    "Class: `template`", "Class: `site`"
+                    f"Class: `{REPO_CLASS}`", f"Class: `{other_class}`"
                 ),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("repo_class does not match", result.stderr)
 
@@ -207,12 +216,12 @@ class ValidateRepoTests(unittest.TestCase):
             security = target / "SECURITY.md"
             security.write_text(
                 security.read_text(encoding="utf-8").replace(
-                    "Initial owner: `VaultSovereign`",
-                    "Initial owner: `DifferentOwner`",
+                    f"Initial owner: `{PRIMARY_OWNER}`",
+                    f"Initial owner: `{PRIMARY_OWNER}-mismatch`",
                 ),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("SECURITY.md owner does not match", result.stderr)
 
@@ -220,10 +229,10 @@ class ValidateRepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             (target / ".github/CODEOWNERS").write_text(
-                "# @VaultSovereign is not an effective ownership rule.\n",
+                f"# @{PRIMARY_OWNER} is not an effective ownership rule.\n",
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("must contain a catch-all rule", result.stderr)
 
@@ -231,10 +240,10 @@ class ValidateRepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             (target / ".github/CODEOWNERS").write_text(
-                "* @VaultSovereign\n.github/** @DifferentOwner\n",
+                f"* @{PRIMARY_OWNER}\n.github/** @{PRIMARY_OWNER}-mismatch\n",
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("every CODEOWNERS rule must include", result.stderr)
 
@@ -244,7 +253,7 @@ class ValidateRepoTests(unittest.TestCase):
             security = target / "SECURITY.md"
             security.unlink()
             security.symlink_to("README.md")
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
             "required file must not be a symbolic link: SECURITY.md",
@@ -255,7 +264,7 @@ class ValidateRepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
             (target / "leak.txt").write_text("AKIA" + "A" * 16 + "\n", encoding="utf-8")
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("possible secret-like material found in leak.txt", result.stderr)
 
@@ -268,7 +277,7 @@ class ValidateRepoTests(unittest.TestCase):
                 + "\n# forbidden regression: ${{ secrets.ORGANIZATION_TOKEN }}\n",
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
             "does not match the canonical self-contained baseline", result.stderr
@@ -285,7 +294,7 @@ class ValidateRepoTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
             "does not match the canonical self-contained baseline", result.stderr
@@ -303,7 +312,7 @@ class ValidateRepoTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
             "does not match the canonical self-contained baseline", result.stderr
@@ -322,12 +331,16 @@ class ValidateRepoTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
             "does not match the canonical self-contained baseline", result.stderr
         )
 
+    @unittest.skipUnless(
+        REPO_CLASS == "template",
+        "the single-workflow inventory boundary applies only to template repositories",
+    )
     def test_template_additional_workflow_fails(self):
         with tempfile.TemporaryDirectory() as temp:
             target = self.copy_repository(Path(temp))
@@ -335,7 +348,7 @@ class ValidateRepoTests(unittest.TestCase):
                 "name: Extra\non: workflow_dispatch\njobs: {}\n",
                 encoding="utf-8",
             )
-            result = self.run_validator(target, "witnessops-repo-bootstrap")
+            result = self.run_validator(target, REPO_ID)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("workflow inventory must contain only", result.stderr)
 
