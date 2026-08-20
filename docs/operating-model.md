@@ -5,7 +5,8 @@ evidence, proof, receipt, verification-outcome, or production authority.
 
 ## Seed a repository
 
-1. Create or copy the repository from this bootstrap.
+1. Create the repository from this bootstrap, either with
+   `bash scripts/seed-new-repo.sh` or by copying the seeded inventory manually.
 2. Complete `docs/customization-checklist.md` before feature work.
 3. Run `bash scripts/validate-repo.sh` from the new repository root.
 4. Open a pull request that states its change class and authority impact.
