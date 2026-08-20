@@ -2,6 +2,24 @@
 
 All durable changes to this repository should be recorded here.
 
+## 0.3.0 - 2026-08-20
+
+### Added
+
+- Added `scripts/seed-new-repo.sh` and `scripts/seed_new_repo.py`, a scripted
+  seeding path that copies exactly the documented seeded inventory, rewrites
+  every validated identity field, runs the copied validation gate with the new
+  repository identity, and fails closed on any rewrite or gate failure.
+- Added regression tests for the seeding path, including an end-to-end seed
+  that passes the downstream gate.
+
+### Fixed
+
+- Made the copied regression suite read identity, class, and ownership from
+  the repository manifest so a customized seeded repository passes its own
+  required gate; the extra-template-workflow regression now runs only for
+  template-class repositories.
+
 ## 0.2.0 - 2026-08-19
 
 ### Hardened

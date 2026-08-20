@@ -55,6 +55,29 @@ docs/decisions/0001-repo-created.md
 docs/decisions/0002-self-contained-seed-validation.md
 ```
 
+## Create a new repository from this template
+
+From a clone of this template, run the seeding script to produce a new
+repository in one step:
+
+```bash
+bash scripts/seed-new-repo.sh ../my-new-repository \
+  --repo-class docs \
+  --owner MyGitHubAccount \
+  --purpose "Bounded purpose of the new repository"
+```
+
+The script copies exactly the seeded repo contract inventory, rewrites the
+manifest, contract, README title, creation decision, governance, security, and
+CODEOWNERS identity fields, runs the copied validation gate with the new
+repository identity, and initialises Git. It fails closed if any rewrite or the
+gate fails, and it prints the manual steps that remain.
+
+The seeding script ships only with this template and is not part of the seeded
+inventory. Seeding does not create the GitHub repository, apply
+[`docs/repository-settings.md`](docs/repository-settings.md), or complete the
+manual items in the customization checklist.
+
 ## Customize before calling a repo seeded
 
 A copied repository still describes this bootstrap until its identity,
