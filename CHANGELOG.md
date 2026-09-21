@@ -2,6 +2,15 @@
 
 All durable changes to this repository should be recorded here.
 
+## Unreleased
+
+### Added
+
+- Added an agent-orientation pointer to the central WitnessOps context in
+  `AGENTS.md`, with approved-scope execution and unavailable-context guidance.
+  Existing local instructions, authority boundaries and the self-contained
+  validation workflow remain unchanged. See decision 0004.
+
 ## 0.3.0 - 2026-08-20
 
 ### Added
